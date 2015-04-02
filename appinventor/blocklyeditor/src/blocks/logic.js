@@ -104,6 +104,22 @@ Blockly.Blocks['logic_negate'] = {
   typeblock: [{translatedName: Blockly.Msg.LANG_LOGIC_NEGATE_INPUT_NOT}]
 };
 
+
+Blockly.Blocks['logic_negate_negate'] = {
+    // Double Negation.
+    category: 'Logic',
+    helpUrl: Blockly.Msg.LANG_LOGIC_NEGATE_NEGATE_HELPURL,
+    init: function () {
+      this.setColour(Blockly.LOGIC_CATEGORY_HUE);
+      this.setOutput(true, Blockly.Blocks.Utilities.YailTypeToBlocklyType("boolean", Blockly.Blocks.Utilities.OUTPUT));
+      this.appendValueInput('BOOL')
+          .setCheck(Blockly.Blocks.Utilities.YailTypeToBlocklyType("boolean", Blockly.Blocks.Utilities.INPUT))
+          .appendField(Blockly.Msg.LANG_LOGIC_NEGATE_NEGATE_INPUT_NOT);
+      this.setTooltip(Blockly.Msg.LANG_LOGIC_NEGATE_NEGATE_TOOLTIP);
+    },
+    typeblock: [{translatedName: Blockly.Msg.LANG_LOGIC_NEGATE_NEGATE_INPUT_NOT}]
+};
+
 Blockly.Blocks['logic_compare'] = {
   // Comparison operator.
   category: 'Logic',
