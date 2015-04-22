@@ -10,7 +10,7 @@
 
 goog.provide('Blockly.UndoIndicator');
 
-goog.require('goog.Timer');
+goog.require('Blockly.UndoHandler');
 
 
 /**
@@ -72,59 +72,13 @@ Blockly.UndoIndicator.prototype.createDom = function() {
     console.log("UndoIndicator: createDom");
     this.svgGroup_ = Blockly.createSvgElement('g', {}, null);
     
-    //this.warningCount_ = Blockly.createSvgElement('text',
-    //    {'fill': "black", 'transform':"translate(20,14)"},
-    //    this.svgGroup_);
-    //this.warningCount_.textContent = "0";
-
-
-    //this.iconGroup_ = Blockly.createSvgElement('g',
-    //    {'class': 'blocklyIconGroup', 'translate':"transform(0,0)"}, this.svgGroup_);
-    //var iconShield = Blockly.createSvgElement('path',
-    //    {'class': 'blocklyWarningIconShield',
-    //        'd': 'M 2,15 Q -1,15 0.5,12 L 6.5,1.7 Q 8,-1 9.5,1.7 L 15.5,12 ' +
-    //        'Q 17,15 14,15 z'},
-    //    this.iconGroup_);
-    //this.iconMark_ = Blockly.createSvgElement('text',
-    //    {'class': 'blocklyWarningIconMark',
-    //        'x': Blockly.ErrorIcon.ICON_RADIUS,
-    //        'y': 2 * Blockly.ErrorIcon.ICON_RADIUS - 3}, this.iconGroup_);
-    //this.iconMark_.appendChild(document.createTextNode('!'));
-
-
-    //this.errorCount_ = Blockly.createSvgElement('text',
-    //    {'fill': "black", 'transform':"translate(75,14)"},
-    //    this.svgGroup_);
-    //this.errorCount_.textContent = "0";
-
-    //this.iconErrorGroup_ = Blockly.createSvgElement('g',
-    //    {'class': 'blocklyIconGroup', 'transform':"translate(55,0)"}, this.svgGroup_);
-    //var iconErrorShield = Blockly.createSvgElement('path',
-    //    {'class': 'blocklyErrorIconShield',
-    //        'd': 'M 2,15 Q -1,15 0.5,12 L 6.5,1.7 Q 8,-1 9.5,1.7 L 15.5,12 ' +
-    //        'Q 17,15 14,15 z','x':20},
-    //    this.iconErrorGroup_);
-    //this.iconErrorMark_ = Blockly.createSvgElement('text',
-    //    {'class': 'blocklyIconMark',
-    //        'x': Blockly.ErrorIcon.ICON_RADIUS,
-    //        'y': 2 * Blockly.ErrorIcon.ICON_RADIUS - 3}, this.iconErrorGroup_);
-    //this.iconErrorMark_.appendChild(document.createTextNode('!'));
-
-    //this.warningToggle_ = Blockly.createSvgElement('rect',
-    //    {'fill': "#eeeeee",'width':"120", 'height':"20", 'x':"-15",'y':"20",'style':"stroke:black;stroke-width:1;cursor:pointer;"},
-    //    this.svgGroup_);
-    //this.warningToggleText_ = Blockly.createSvgElement('text',
-    //    {'fill': "black", 'transform':"translate(45,35)",'text-anchor':"middle",'style':"font-size:10pt;cursor:pointer;"},
-    //    this.svgGroup_);
-    //this.warningToggleText_.textContent = Blockly.Msg.SHOW_WARNINGS;
-    
     this.undoToggle_ = Blockly.createSvgElement('rect',
-        {'fill': "#eeeeee",'width':"120", 'height':"20", 'x':"150",'y':"20",'style':"stroke:black;stroke-width:1;cursor:pointer;"},
+        {'fill': "#eeeeee",'width':"120", 'height':"20", 'x':"125",'y':"20",'style':"stroke:black;stroke-width:1;cursor:pointer;"},
         this.svgGroup_);
     this.undoToggleText_ = Blockly.createSvgElement('text',
-        {'fill': "black", 'transform':"translate(210,35)",'text-anchor':"middle",'style':"font-size:10pt;cursor:pointer;"},
+        {'fill': "black", 'transform':"translate(185,35)",'text-anchor':"middle",'style':"font-size:10pt;cursor:pointer;"},
         this.svgGroup_);
-    this.undoToggleText_.textContent = "Undo";//Blockly.Msg.SHOW_WARNINGS;
+    this.undoToggleText_.textContent = "Undo (0)"; //Blockly.Msg.SHOW_WARNINGS;
 
     return this.svgGroup_;
 };
@@ -133,8 +87,6 @@ Blockly.UndoIndicator.prototype.createDom = function() {
  * Initialize the warning indicator.
  */
 Blockly.UndoIndicator.prototype.init = function() {
-    console.log("UndoIndicator: init");
-    
     this.position_();
     // If the document resizes, reposition the warning indicator.
     Blockly.bindEvent_(window, 'resize', this, this.position_);
@@ -154,17 +106,8 @@ Blockly.UndoIndicator.prototype.dispose = function() {
 
     this.getMetrics_ = null;
 
-    //this.warningCount_ = null;
-    //this.iconGroup_ = null;
-    //this.iconMark_ = null;
-
-    //this.errorCount_ = null;
-    //this.iconErrorGroup_ = null;
-    //this.iconErrorMark_ = null;
-
     this.undoToggle_ = null;
     this.undoToggleText_ = null;
-
 };
 
 /**
@@ -187,25 +130,18 @@ Blockly.UndoIndicator.prototype.position_ = function() {
 };
 
 
-///**
-// * Update the error and warning count on the indicator.
-// *
-// */
-//Blockly.UndoIndicator.prototype.updateWarningAndErrorCount = function() {
-//    this.errorCount_.textContent = Blockly.WarningHandler.errorCount;
-//    this.warningCount_.textContent = Blockly.WarningHandler.warningCount;
-//}
-
 /**
  * Change the undo button to indicate whether it can perform actions or not.
  */
-Blockly.UndoIndicator.prototype.updateUndoToggle = function() {
-    //if(Blockly.WarningHandler.showWarningsToggle) {
-    //    this.undoToggleText_.textContent = Blockly.Msg.HIDE_WARNINGS;
-    //} else {
-    //    this.undoToggleText_.textContent = Blockly.Msg.SHOW_WARNINGS;
-    //}
-    console.log("updateUndoToggle!");
+Blockly.UndoIndicator.prototype.updateUndoButton = function(numSavedStates) {
+    if(numSavedStates > 0) {
+        this.undoToggleText_.textContent = "Undo (" + numSavedStates + ")"; //Blockly.Msg.HIDE_WARNINGS;
+    }
+    else {
+        this.undoToggleText_.textContent = "Undo (0)"; //Blockly.Msg.SHOW_WARNINGS;
+    }
+    
+    console.log("updateUndoButton: " + numSavedStates);
 };
 
 /**
@@ -214,4 +150,6 @@ Blockly.UndoIndicator.prototype.updateUndoToggle = function() {
 Blockly.UndoIndicator.prototype.onclickUndoToggle = function() {
     //window.parent.BlocklyPanel_callToggleWarning();
     console.log("onclickUndoToggle!");
+    
+    Blockly.UndoHandler.retrieveState();
 };

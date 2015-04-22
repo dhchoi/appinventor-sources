@@ -427,6 +427,10 @@ Blockly.onKeyDown_ = function(e) {
     try {
       if (Blockly.selected && Blockly.selected.isDeletable()) {
         if (Blockly.selected.confirmDeletion()){
+          console.log("trying to delete");
+          // Save deleted blocks
+          Blockly.UndoHandler.saveState(Blockly.selected);
+            
           Blockly.selected.dispose(true, true);
         }
         Blockly.hideChaff()

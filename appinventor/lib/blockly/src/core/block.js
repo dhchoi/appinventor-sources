@@ -38,6 +38,7 @@ goog.require('Blockly.Msg');
 goog.require('Blockly.Mutator');
 goog.require('Blockly.Warning');
 goog.require('Blockly.WarningHandler');
+goog.require('Blockly.UndoHandler');
 goog.require('Blockly.Workspace');
 goog.require('Blockly.Xml');
 goog.require('goog.Timer');
