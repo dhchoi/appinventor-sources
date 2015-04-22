@@ -53,6 +53,7 @@ goog.require('Blockly.WidgetDiv');
 goog.require('Blockly.Workspace');
 goog.require('Blockly.inject');
 goog.require('Blockly.utils');
+goog.require('Blockly.UndoHandler');
 
 // Closure dependencies.
 goog.require('goog.color');
@@ -427,8 +428,8 @@ Blockly.onKeyDown_ = function(e) {
     try {
       if (Blockly.selected && Blockly.selected.isDeletable()) {
         if (Blockly.selected.confirmDeletion()){
-          console.log("trying to delete");
           // Save deleted blocks
+          console.log("trying to delete");
           Blockly.UndoHandler.saveState(Blockly.selected);
             
           Blockly.selected.dispose(true, true);
@@ -460,6 +461,11 @@ Blockly.onKeyDown_ = function(e) {
       if (Blockly.clipboard_) {
         Blockly.mainWorkspace.paste(Blockly.clipboard_);
       }
+    }
+    if (e.keyCode == 90) {
+      // 'z' for undo.
+      console.log("key for undo!");
+      Blockly.UndoHandler.retrieveState();
     }
   }
 };
