@@ -6,18 +6,27 @@
  * @author andy.dh.choi@gmail.com (Andy DongHyun Choi)
  */
 
+/**
+ * TODO:
+ *  - save connections
+ */
+
 'use strict';
 
 goog.provide('Blockly.UndoHandler');
 
 Blockly.UndoHandler.savedStates = [];
 
-Blockly.UndoHandler.saveState = function(block){
+Blockly.UndoHandler.saveState = function(block, lastPosition){
+    //console.dir(block);
+    //console.log(lastPosition);
+
     /* (referred from Blockly.copy_() inside blockly.js) */
     var xmlBlock = Blockly.Xml.blockToDom_(block);
-    Blockly.Xml.deleteNext(xmlBlock);
+    //Blockly.Xml.deleteNext(xmlBlock);
+    
     // Encode start position in XML.
-    var xy = block.getRelativeToSurfaceXY();
+    var xy = lastPosition ? lastPosition : block.getRelativeToSurfaceXY();
     xmlBlock.setAttribute('x', Blockly.RTL ? -xy.x : xy.x);
     xmlBlock.setAttribute('y', xy.y);
     

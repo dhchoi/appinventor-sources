@@ -38,6 +38,7 @@ goog.require('Blockly.Msg');
 goog.require('Blockly.Mutator');
 goog.require('Blockly.Warning');
 goog.require('Blockly.WarningHandler');
+goog.require('Blockly.UndoHandler');
 goog.require('Blockly.Workspace');
 goog.require('Blockly.Xml');
 goog.require('goog.Timer');
@@ -674,6 +675,7 @@ Blockly.Block.prototype.onMouseUp_ = function(e) {
       var trashcan = this_.workspace.trashcan;
       goog.Timer.callOnce(trashcan.close, 100, trashcan);
       if (Blockly.selected.confirmDeletion()) {
+        Blockly.UndoHandler.saveState(Blockly.selected, {x: this_.startDragX, y: this_.startDragY});
         Blockly.selected.dispose(false, true);
       }
       // Dropping a block on the trash can will usually cause the workspace to
