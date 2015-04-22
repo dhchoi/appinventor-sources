@@ -192,9 +192,7 @@ Blockly.Workspace.prototype.addWarningIndicator = function(getMetrics) {
  * @param {!Function} getMetrics A function that returns workspace's metrics.
  */
 Blockly.Workspace.prototype.addUndoIndicator = function(getMetrics) {
-  console.log("inside Blockly.Workspace.prototype.addUndoIndicator");
   if (Blockly.UndoIndicator && !this.readOnly) {
-    console.log("inside if loop of Blockly.Workspace.prototype.addUndoIndicator");
     this.undoIndicator = new Blockly.UndoIndicator(getMetrics);
     var svgUndoIndicator = this.undoIndicator.createDom();
     this.svgGroup_.insertBefore(svgUndoIndicator, this.svgBlockCanvas_);
