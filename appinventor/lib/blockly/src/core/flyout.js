@@ -586,7 +586,7 @@ Blockly.Flyout.prototype.createBlockFunc_ = function(originBlock) {
     // Create the new block by cloning the block in the flyout (via XML).
     var xml = Blockly.Xml.blockToDom_(originBlock);
     var block = Blockly.Xml.domToBlock(flyout.targetWorkspace_, xml);
-    // Record state
+    // Record state (no need to end record here, since event will continue in Block.prototype.onMouseDown_())
     Blockly.UndoHandler.startRecord(block);
     Blockly.UndoHandler.addRecord(Blockly.UndoHandler.STATE_TYPE_CREATED);
     // Place it in the same spot as the flyout copy.

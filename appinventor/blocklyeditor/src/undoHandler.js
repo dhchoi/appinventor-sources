@@ -8,14 +8,16 @@
 
 /**
  * TODO:
+ * [Required]
  *  - change hardcoded strings to MSGs and enums
  *  - refactor variable and method names
  *  - implement for disconnections in case of healStack when DELETED_BY_KEY
- *  - implement for copy/cut/paste
- *  - implement for block collapse/disable/add_comment (context menu orders)
- *  - implement for mutators
  *  - fix when connecting into middle (if undo is done, then the bottom should connect back to top)
- *  
+ *  - redo
+ *
+ *  [Potential]
+ *  - implement for block collapse/disable/add_comment changes (context menu orders)?
+ *  - implement for block mutations?
  *  - there is a bug? where deleted blocks still remain in workspace (that is why id is incremented for revived blocks)
  *  - not tested for Blockly.Realtime environments (don't know what that is)
  */
@@ -201,16 +203,14 @@ Blockly.UndoHandler.createConnectedBlockRecord = function(previousConnectedConne
 };
 
 Blockly.UndoHandler.createDisconnectedBlockRecord = function(disconnectedBlocks) {
+    var block = Blockly.UndoHandler.savedState.BLOCK;
     var disconnectedBlocksRecords = [];
     for(var i = 0; i < disconnectedBlocks.length; i ++) {
-        var block = Blockly.UndoHandler.savedState.BLOCK;
         var disconnectedBlock = disconnectedBlocks[i];
-        var disconnectedBlocksConnectionToBlockIndex = Blockly.UndoHandler.getConnectionToTargetBlockIndex(disconnectedBlock, block);
-        var blocksConnectionToDisconnectedBlockIndex = Blockly.UndoHandler.getConnectionToTargetBlockIndex(block, disconnectedBlock);
         disconnectedBlocksRecords.push({
             disconnectedBlock: disconnectedBlock,
-            disconnectedBlocksConnectionToBlockIndex: disconnectedBlocksConnectionToBlockIndex,
-            blocksConnectionToDisconnectedBlockIndex: blocksConnectionToDisconnectedBlockIndex
+            disconnectedBlocksConnectionToBlockIndex: Blockly.UndoHandler.getConnectionToTargetBlockIndex(disconnectedBlock, block),
+            blocksConnectionToDisconnectedBlockIndex: Blockly.UndoHandler.getConnectionToTargetBlockIndex(block, disconnectedBlock)
         });
     }
     
@@ -227,7 +227,7 @@ Blockly.UndoHandler.getConnectionToTargetBlockIndex = function(sourceBlock, targ
 };
 
 Blockly.UndoHandler.startRecord = function(block) {
-    // not going to save states for other workspaces (e.g. mutators, etc.)
+    // not going to save states for changes in other workspaces (e.g. mutator workspaces, etc.)
     if(block.workspace == Blockly.mainWorkspace && Blockly.UndoHandler.isRecording == false) {
         // reset savedState
         Blockly.UndoHandler.savedState = {};
@@ -274,7 +274,6 @@ Blockly.UndoHandler.endRecord = function () {
                 Blockly.UndoHandler.notifyStateChange();
             }
         }
-
         Blockly.UndoHandler.isRecording = false;
     }
 };

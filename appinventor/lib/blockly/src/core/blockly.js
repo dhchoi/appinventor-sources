@@ -461,6 +461,18 @@ Blockly.onKeyDown_ = function(e) {
       } else if (e.keyCode == 88) {
         // 'x' for cut.
         Blockly.copy_(Blockly.selected);
+        Blockly.UndoHandler.startRecord(Blockly.selected);
+        if(Blockly.selected.getParent() && Blockly.selected.getNextBlock()) {
+          Blockly.UndoHandler.addRecord(Blockly.UndoHandler.STATE_TYPE_DISCONNECTED, [Blockly.selected.getParent(), Blockly.selected.getNextBlock()]);
+        }
+        else if(Blockly.selected.getParent()) {
+          Blockly.UndoHandler.addRecord(Blockly.UndoHandler.STATE_TYPE_DISCONNECTED, [Blockly.selected.getParent()]);
+        }
+        else if(Blockly.selected.getNextBlock()) {
+          Blockly.UndoHandler.addRecord(Blockly.UndoHandler.STATE_TYPE_DISCONNECTED, [Blockly.selected.getNextBlock()]);
+        }
+        Blockly.UndoHandler.addRecord(Blockly.UndoHandler.STATE_TYPE_DELETED, Blockly.UndoHandler.DELETED_BY_KEY);
+        Blockly.UndoHandler.endRecord();
         Blockly.selected.dispose(true, true);
       }
     }
@@ -468,6 +480,9 @@ Blockly.onKeyDown_ = function(e) {
       // 'v' for paste.
       if (Blockly.clipboard_) {
         Blockly.mainWorkspace.paste(Blockly.clipboard_);
+        Blockly.UndoHandler.startRecord(Blockly.selected);
+        Blockly.UndoHandler.addRecord(Blockly.UndoHandler.STATE_TYPE_CREATED);
+        Blockly.UndoHandler.endRecord();
       }
     }
     if (e.keyCode == 90) {
