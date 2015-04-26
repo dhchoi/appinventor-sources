@@ -593,6 +593,7 @@ Blockly.Block.prototype.onMouseDown_ = function(e) {
   Blockly.svgResize();
   Blockly.terminateDrag_();
   this.select();
+  Blockly.UndoHandler.startRecord(Blockly.selected);
   Blockly.hideChaff();
   if (Blockly.isRightButton(e)) {
     // Right-click.
@@ -653,7 +654,13 @@ Blockly.Block.prototype.onMouseUp_ = function(e) {
   Blockly.resetWorkspaceArrangements();
   Blockly.doCommand(function() {
     Blockly.terminateDrag_();
+    // ignore simple clicks when recording moves
+    if (!(this_.startDragX == Blockly.selected.getRelativeToSurfaceXY().x && this_.startDragY == Blockly.selected.getRelativeToSurfaceXY().y)) {
+      Blockly.UndoHandler.addRecord(Blockly.UndoHandler.STATE_TYPE_MOVED);
+    }
     if (Blockly.selected && Blockly.highlightedConnection_) {
+      // check what connected connections the block originally had before making the new connection
+      var previousConnectedConnections = Blockly.selected.getConnectedConnectionsList_();
       // Connect two blocks together.
       Blockly.localConnection_.connect(Blockly.highlightedConnection_);
       if (this_.svg_) {
@@ -671,11 +678,12 @@ Blockly.Block.prototype.onMouseUp_ = function(e) {
         // Don't throw an object in the trash can if it just got connected.
         this_.workspace.trashcan.close();
       }
+      Blockly.UndoHandler.addRecord(Blockly.UndoHandler.STATE_TYPE_CONNECTED, previousConnectedConnections);
     } else if (this_.workspace.trashcan && this_.workspace.trashcan.isOpen) {
       var trashcan = this_.workspace.trashcan;
       goog.Timer.callOnce(trashcan.close, 100, trashcan);
       if (Blockly.selected.confirmDeletion()) {
-        Blockly.UndoHandler.saveState(Blockly.selected, {x: this_.startDragX, y: this_.startDragY});
+        Blockly.UndoHandler.addRecord(Blockly.UndoHandler.STATE_TYPE_DELETED, Blockly.UndoHandler.DELETED_BY_MOUSE);
         Blockly.selected.dispose(false, true);
       }
       // Dropping a block on the trash can will usually cause the workspace to
@@ -687,6 +695,7 @@ Blockly.Block.prototype.onMouseUp_ = function(e) {
       Blockly.highlightedConnection_.unhighlight();
       Blockly.highlightedConnection_ = null;
     }
+    Blockly.UndoHandler.endRecord();
   });
   if (! Blockly.Instrument.avoidRenderWorkspaceInMouseUp) {
     // [lyn, 04/01/14] rendering a workspace takes a *long* time and is *not* necessary!
@@ -698,6 +707,23 @@ Blockly.Block.prototype.onMouseUp_ = function(e) {
   var timeDiff = stop - start;
   Blockly.Instrument.stats.totalTime = timeDiff;
   Blockly.Instrument.displayStats("onMouseUp");
+};
+
+/**
+ * Get a list of connections only for those that have target connections (i.e. is connected to something).
+ * @private
+ */
+Blockly.Block.prototype.getConnectedConnectionsList_ = function () {
+    var connectedConnections = [];
+    var allConnections = Blockly.selected.getConnections_();
+    
+    for(var i = 0; i < allConnections.length; i++) {
+        if(allConnections[i].targetConnection != null) {
+            connectedConnections.push(allConnections[i]);
+        }
+    }
+    
+    return connectedConnections;
 };
 
 /**
@@ -970,6 +996,10 @@ Blockly.Block.prototype.onMouseMove_ = function(e) {
       if (dr > Blockly.DRAG_RADIUS) {
         // Switch to unrestricted dragging.
         Blockly.Block.dragMode_ = 2;
+        // add disconnect record
+        if(this_.getParent()) {
+            Blockly.UndoHandler.addRecord(Blockly.UndoHandler.STATE_TYPE_DISCONNECTED, [this_.getParent()]);
+        }
         // Push this block to the very top of the stack.
         this_.setParent(null);
         this_.setDragging_(true);

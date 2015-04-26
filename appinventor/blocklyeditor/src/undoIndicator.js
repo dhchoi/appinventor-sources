@@ -3,7 +3,7 @@
  * @fileoverview Visual blocks editor for App Inventor
  * Methods to handle undos in the block editor.
  *
- * @author andy.dh.choi@gmail.com (Andy DongHyun Choi)
+ * @author andy.dh.choi@gmail.com (Andy Choi)
  */
 
 'use strict';
@@ -69,7 +69,6 @@ Blockly.UndoIndicator.prototype.top_ = 0;
  * @return {!Element} The warning indicator's SVG group.
  */
 Blockly.UndoIndicator.prototype.createDom = function() {
-    console.log("UndoIndicator: createDom");
     this.svgGroup_ = Blockly.createSvgElement('g', {}, null);
     
     this.undoToggle_ = Blockly.createSvgElement('rect',
@@ -133,23 +132,18 @@ Blockly.UndoIndicator.prototype.position_ = function() {
 /**
  * Change the undo button to indicate whether it can perform actions or not.
  */
-Blockly.UndoIndicator.prototype.updateUndoButton = function(numSavedStates) {
+Blockly.UndoIndicator.prototype.updateUndoIndicator = function(numSavedStates) {
     if(numSavedStates > 0) {
         this.undoToggleText_.textContent = "Undo (" + numSavedStates + ")"; //Blockly.Msg.HIDE_WARNINGS;
     }
     else {
         this.undoToggleText_.textContent = "Undo (0)"; //Blockly.Msg.SHOW_WARNINGS;
     }
-    
-    console.log("updateUndoButton: " + numSavedStates);
 };
 
 /**
  * Call to undo any actions.
  */
 Blockly.UndoIndicator.prototype.onclickUndoToggle = function() {
-    //window.parent.BlocklyPanel_callToggleWarning();
-    console.log("onclickUndoToggle!");
-    
     Blockly.UndoHandler.retrieveState();
 };

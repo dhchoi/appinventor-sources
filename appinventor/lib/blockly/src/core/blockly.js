@@ -428,10 +428,18 @@ Blockly.onKeyDown_ = function(e) {
     try {
       if (Blockly.selected && Blockly.selected.isDeletable()) {
         if (Blockly.selected.confirmDeletion()){
-          // Save deleted blocks
-          console.log("trying to delete");
-          Blockly.UndoHandler.saveState(Blockly.selected);
-            
+          Blockly.UndoHandler.startRecord(Blockly.selected);
+          if(Blockly.selected.getParent() && Blockly.selected.getNextBlock()) {
+            Blockly.UndoHandler.addRecord(Blockly.UndoHandler.STATE_TYPE_DISCONNECTED, [Blockly.selected.getParent(), Blockly.selected.getNextBlock()]);
+          }
+          else if(Blockly.selected.getParent()) {
+            Blockly.UndoHandler.addRecord(Blockly.UndoHandler.STATE_TYPE_DISCONNECTED, [Blockly.selected.getParent()]);
+          }
+          else if(Blockly.selected.getNextBlock()) {
+            Blockly.UndoHandler.addRecord(Blockly.UndoHandler.STATE_TYPE_DISCONNECTED, [Blockly.selected.getNextBlock()]);
+          }
+          Blockly.UndoHandler.addRecord(Blockly.UndoHandler.STATE_TYPE_DELETED, Blockly.UndoHandler.DELETED_BY_KEY);
+          Blockly.UndoHandler.endRecord();
           Blockly.selected.dispose(true, true);
         }
         Blockly.hideChaff()
@@ -464,7 +472,6 @@ Blockly.onKeyDown_ = function(e) {
     }
     if (e.keyCode == 90) {
       // 'z' for undo.
-      console.log("key for undo!");
       Blockly.UndoHandler.retrieveState();
     }
   }
