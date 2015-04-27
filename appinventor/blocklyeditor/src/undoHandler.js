@@ -13,6 +13,7 @@
  *  - refactor variable and method names
  *  - implement for disconnections in case of healStack when DELETED_BY_KEY
  *  - fix when connecting into middle (if undo is done, then the bottom should connect back to top)
+ *  - automatic block movements when superior connecting to inferior
  *  - redo
  *
  *  [Potential]
@@ -44,64 +45,69 @@ Blockly.UndoHandler.isRecording = false;
 Blockly.UndoHandler.retrieveState = function () {
     if (Blockly.UndoHandler.savedStates.length > 0) {
         var mostRecentState = Blockly.UndoHandler.savedStates.pop();
-        var mostRecentStateBlock = mostRecentState.BLOCK;
-        
-        // STATE CHANGE TYPE: deleted -> revive what was deleted
-        if(mostRecentState.hasOwnProperty(Blockly.UndoHandler.STATE_TYPE_DELETED)) {
-            var deletedXmlBlock = mostRecentState[Blockly.UndoHandler.STATE_TYPE_DELETED].xmlBlock;
-            Blockly.mainWorkspace.paste(deletedXmlBlock);
-            mostRecentStateBlock = Blockly.selected;
-        
-            // remap ids since they've changed if deleted and revived back
-            var deletedIds = mostRecentState[Blockly.UndoHandler.STATE_TYPE_DELETED].deletedIds;
-            var revivedIds = Blockly.UndoHandler.getIdsForDescendants(mostRecentStateBlock);
-            for(var i = 0; i < deletedIds.length; i++) {
-                Blockly.UndoHandler.remapDeletedBlockToRevivedBlock(deletedIds[i], revivedIds[i]);
-            }
-        }
-        
-        // STATE CHANGE TYPE: connected -> disconnect what was connected
-        if(mostRecentState.hasOwnProperty(Blockly.UndoHandler.STATE_TYPE_CONNECTED)) {
-            var connectedConnectionIndices = mostRecentState[Blockly.UndoHandler.STATE_TYPE_CONNECTED];
-            for(var i = 0; i < connectedConnectionIndices.length; i++) {
-                var connection = mostRecentStateBlock.getConnections_()[connectedConnectionIndices[i]];
-                if(connection.isSuperior()) {
-                    connection.targetConnection.sourceBlock_.unplug();
-                }
-                else {
-                    connection.sourceBlock_.unplug();
-                }
-            }
-        }
-        
-        // STATE CHANGE TYPE: moved -> move back to last position
-        if(mostRecentState.hasOwnProperty(Blockly.UndoHandler.STATE_TYPE_MOVED)) {
-            var lastPosition = mostRecentState[Blockly.UndoHandler.STATE_TYPE_MOVED];
-            mostRecentStateBlock.moveTo(lastPosition.x, lastPosition.y);
-        }
-        
-        // STATE CHANGE TYPE: disconnected -> connect what was disconnected
-        if(mostRecentState.hasOwnProperty(Blockly.UndoHandler.STATE_TYPE_DISCONNECTED)) {
-            var disconnectedBlocksRecords = mostRecentState[Blockly.UndoHandler.STATE_TYPE_DISCONNECTED];
-            for(var i = 0; i < disconnectedBlocksRecords.length; i++) {
-                var disconnectedBlockRecord = disconnectedBlocksRecords[i];
-                var disconnectedBlock = disconnectedBlockRecord.disconnectedBlock;
-                var disconnectedBlocksConnectionToBlockIndex = disconnectedBlockRecord.disconnectedBlocksConnectionToBlockIndex;
-                var blocksConnectionToDisconnectedBlockIndex = disconnectedBlockRecord.blocksConnectionToDisconnectedBlockIndex;
-                // only connect if disconnectedBlock didn't connect to something in the meanwhile (e.g. healStack) 
-                if(disconnectedBlock.getConnections_()[disconnectedBlocksConnectionToBlockIndex].targetConnection == null) {
-                    disconnectedBlock.getConnections_()[disconnectedBlocksConnectionToBlockIndex].connect(mostRecentStateBlock.getConnections_()[blocksConnectionToDisconnectedBlockIndex]);
-                }
-            }
-        }
-
-        if(mostRecentState.hasOwnProperty(Blockly.UndoHandler.STATE_TYPE_CREATED)) {
-            mostRecentStateBlock.dispose(false, false);
-        }
-        
-        // notify state change to undoIndicator
-        Blockly.UndoHandler.notifyStateChange();
+        Blockly.UndoHandler.processState(mostRecentState);
     }
+};
+
+Blockly.UndoHandler.processState = function(state) {
+    var block = state.BLOCK;
+
+    // STATE CHANGE TYPE: deleted -> revive what was deleted
+    if(state.hasOwnProperty(Blockly.UndoHandler.STATE_TYPE_DELETED)) {
+        var deletedXmlBlock = state[Blockly.UndoHandler.STATE_TYPE_DELETED].xmlBlock;
+        Blockly.mainWorkspace.paste(deletedXmlBlock);
+        block = Blockly.selected;
+
+        // remap ids since they've changed if deleted and revived back
+        var deletedIds = state[Blockly.UndoHandler.STATE_TYPE_DELETED].deletedIds;
+        var revivedIds = Blockly.UndoHandler.getIdsForDescendants(block);
+        for(var i = 0; i < deletedIds.length; i++) {
+            Blockly.UndoHandler.remapDeletedBlockToRevivedBlock(deletedIds[i], revivedIds[i]);
+        }
+    }
+
+    // STATE CHANGE TYPE: connected -> disconnect what was connected
+    if(state.hasOwnProperty(Blockly.UndoHandler.STATE_TYPE_CONNECTED)) {
+        var connectedConnectionIndices = state[Blockly.UndoHandler.STATE_TYPE_CONNECTED];
+        for(var i = 0; i < connectedConnectionIndices.length; i++) {
+            var connection = block.getConnections_()[connectedConnectionIndices[i]];
+            if(connection.isSuperior()) {
+                connection.targetConnection.sourceBlock_.unplug();
+            }
+            else {
+                connection.sourceBlock_.unplug();
+            }
+        }
+    }
+
+    // STATE CHANGE TYPE: moved -> move back to last position
+    if(state.hasOwnProperty(Blockly.UndoHandler.STATE_TYPE_MOVED)) {
+        var lastPosition = state[Blockly.UndoHandler.STATE_TYPE_MOVED];
+        block.moveTo(lastPosition.x, lastPosition.y);
+    }
+
+    // STATE CHANGE TYPE: disconnected -> connect what was disconnected
+    if(state.hasOwnProperty(Blockly.UndoHandler.STATE_TYPE_DISCONNECTED)) {
+        var disconnectedBlocksRecords = state[Blockly.UndoHandler.STATE_TYPE_DISCONNECTED];
+        for(var i = 0; i < disconnectedBlocksRecords.length; i++) {
+            var disconnectedBlockRecord = disconnectedBlocksRecords[i];
+            var disconnectedBlock = disconnectedBlockRecord.disconnectedBlock;
+            var disconnectedBlocksConnectionToBlockIndex = disconnectedBlockRecord.disconnectedBlocksConnectionToBlockIndex;
+            var blocksConnectionToDisconnectedBlockIndex = disconnectedBlockRecord.blocksConnectionToDisconnectedBlockIndex;
+            // only connect if disconnectedBlock didn't connect to something in the meanwhile (e.g. healStack) 
+            if(disconnectedBlock.getConnections_()[disconnectedBlocksConnectionToBlockIndex].targetConnection == null) {
+                disconnectedBlock.getConnections_()[disconnectedBlocksConnectionToBlockIndex].connect(block.getConnections_()[blocksConnectionToDisconnectedBlockIndex]);
+            }
+        }
+    }
+
+    // STATE CHANGE TYPE: created -> dispose what was created
+    if(state.hasOwnProperty(Blockly.UndoHandler.STATE_TYPE_CREATED)) {
+        block.dispose(false, false);
+    }
+
+    // notify state change to undoIndicator
+    Blockly.UndoHandler.notifyStateChange();
 };
 
 Blockly.UndoHandler.notifyStateChange = function () {
