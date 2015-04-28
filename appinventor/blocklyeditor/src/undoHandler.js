@@ -14,6 +14,7 @@
  *  - implement for disconnections in case of healStack when DELETED_BY_KEY
  *  - fix when connecting into middle (if undo is done, then the bottom should connect back to top)
  *  - recover from automatic block movements when superior block connects to inferior block
+ *  - take care of private members
  *  - implement redo
  *
  *  [Potential]
@@ -199,16 +200,6 @@ Blockly.UndoHandler.startRecord = function(block) {
     }
 };
 
-Blockly.UndoHandler.restartRecord = function(block) {
-    if(block.workspace == Blockly.mainWorkspace && Blockly.UndoHandler.isRecording == true) {
-        Blockly.UndoHandler.savedState = {}; // reset savedState
-        Blockly.UndoHandler.savedState.BLOCK = block;
-    }
-    else {
-        console.log("Blockly.UndoHandler.restartRecord: attempting to restart new record when none has started in first place.");
-    }
-};
-
 Blockly.UndoHandler.addRecord = function(type, data) {
     if(Blockly.UndoHandler.isRecording) {
         // only add record if it was not recorded yet (preventing duplicates)
@@ -235,7 +226,7 @@ Blockly.UndoHandler.addRecord = function(type, data) {
 Blockly.UndoHandler.endRecord = function () {
     if(Blockly.UndoHandler.isRecording) {
         // end record and save it, only if there were actual state changes (check by seeing if there are properties other than BLOCK) 
-        if (Object.keys(Blockly.UndoHandler.savedState).length > 1) {
+        if(Object.keys(Blockly.UndoHandler.savedState).length > 1) {
             // skip cases where created block was deleted right away
             if(!(Blockly.UndoHandler.savedState[Blockly.UndoHandler.STATE_TYPE_CREATED] && Blockly.UndoHandler.savedState[Blockly.UndoHandler.STATE_TYPE_DELETED])) {
                 // if already saving maximum number of states, delete oldest one which is the element at index 0
@@ -247,7 +238,13 @@ Blockly.UndoHandler.endRecord = function () {
                 Blockly.UndoHandler.notifyStateChange();
             }
         }
+        else if(Blockly.UndoHandler.savedState.BLOCK) {
+            //console.log("Blockly.UndoHandler.endRecord: discarding empty record for blockId: " + Blockly.UndoHandler.savedState.BLOCK.id);
+        }
         Blockly.UndoHandler.isRecording = false;
+    }
+    else {
+        console.log("Blockly.UndoHandler.endRecord: there was no previously started record to end.");
     }
 };
 

@@ -593,8 +593,11 @@ Blockly.Block.prototype.onMouseDown_ = function(e) {
   Blockly.svgResize();
   Blockly.terminateDrag_();
   this.select();
-  Blockly.UndoHandler.startRecord(Blockly.selected);
   Blockly.hideChaff();
+  if(Blockly.UndoHandler.isRecording) {
+    Blockly.UndoHandler.endRecord(); // if a record didn't end before onMouseDown_ happened again, it was probably useless 
+  }
+  Blockly.UndoHandler.startRecord(Blockly.selected);
   if (Blockly.isRightButton(e)) {
     // Right-click.
     this.showContextMenu_(e);
@@ -781,8 +784,9 @@ Blockly.Block.prototype.showContextMenu_ = function(e) {
       enabled: true,
       callback: function() {
         block.duplicate_();
-        // gotta restart since record already started in onMouseDown_, and we are no longer recording for that block
-        Blockly.UndoHandler.restartRecord(Blockly.selected);
+        // gotta restart, since we are no longer recording for the block that we started to record for in onMouseDown_
+        Blockly.UndoHandler.endRecord();
+        Blockly.UndoHandler.startRecord(Blockly.selected);
         Blockly.UndoHandler.addRecord(Blockly.UndoHandler.STATE_TYPE_CREATED);
         Blockly.UndoHandler.endRecord();
       }
