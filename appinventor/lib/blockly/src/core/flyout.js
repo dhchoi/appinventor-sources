@@ -588,7 +588,7 @@ Blockly.Flyout.prototype.createBlockFunc_ = function(originBlock) {
     var block = Blockly.Xml.domToBlock(flyout.targetWorkspace_, xml);
     // Record state (no need to end record here, since event will continue in Block.prototype.onMouseDown_())
     Blockly.UndoHandler.startRecord(block);
-    Blockly.UndoHandler.addRecord(Blockly.UndoHandler.STATE_TYPE_CREATED);
+    Blockly.UndoHandler.addRecord(Blockly.UndoHandler.STATE_TYPE_CREATED, Blockly.UndoHandler.CREATED_FROM_OTHER_WORKSPACE);
     // Place it in the same spot as the flyout copy.
     var svgRootOld = originBlock.getSvgRoot();
     if (!svgRootOld) {

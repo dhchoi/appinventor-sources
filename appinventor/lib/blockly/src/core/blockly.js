@@ -481,7 +481,7 @@ Blockly.onKeyDown_ = function(e) {
       if (Blockly.clipboard_) {
         Blockly.mainWorkspace.paste(Blockly.clipboard_);
         Blockly.UndoHandler.startRecord(Blockly.selected);
-        Blockly.UndoHandler.addRecord(Blockly.UndoHandler.STATE_TYPE_CREATED);
+        Blockly.UndoHandler.addRecord(Blockly.UndoHandler.STATE_TYPE_CREATED, Blockly.UndoHandler.CREATED_FROM_SAME_WORKSPACE);
         Blockly.UndoHandler.endRecord();
       }
     }

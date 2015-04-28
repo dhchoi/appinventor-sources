@@ -594,10 +594,12 @@ Blockly.Block.prototype.onMouseDown_ = function(e) {
   Blockly.terminateDrag_();
   this.select();
   Blockly.hideChaff();
-  if(Blockly.UndoHandler.isRecording) {
-    Blockly.UndoHandler.endRecord(); // if a record didn't end before onMouseDown_ happened again, it was probably useless 
+  if(!Blockly.UndoHandler.recordStartedFromOtherWorkspace()) { // continue to record what was started from flyout.js
+    if(Blockly.UndoHandler.isRecording) {
+      Blockly.UndoHandler.endRecord(); // if a record didn't end before onMouseDown_ happened again, it was probably useless 
+    }
+    Blockly.UndoHandler.startRecord(Blockly.selected);
   }
-  Blockly.UndoHandler.startRecord(Blockly.selected);
   if (Blockly.isRightButton(e)) {
     // Right-click.
     this.showContextMenu_(e);
@@ -787,7 +789,7 @@ Blockly.Block.prototype.showContextMenu_ = function(e) {
         // gotta restart, since we are no longer recording for the block that we started to record for in onMouseDown_
         Blockly.UndoHandler.endRecord();
         Blockly.UndoHandler.startRecord(Blockly.selected);
-        Blockly.UndoHandler.addRecord(Blockly.UndoHandler.STATE_TYPE_CREATED);
+        Blockly.UndoHandler.addRecord(Blockly.UndoHandler.STATE_TYPE_CREATED, Blockly.UndoHandler.CREATED_FROM_SAME_WORKSPACE);
         Blockly.UndoHandler.endRecord();
       }
     };

@@ -39,12 +39,15 @@ Blockly.UndoHandler.STATE_TYPE_DELETED = "STATE_TYPE_DELETED";
 Blockly.UndoHandler.DELETED_BY_KEY = "DELETED_BY_KEY";
 Blockly.UndoHandler.DELETED_BY_MOUSE = "DELETED_BY_MOUSE";
 
+Blockly.UndoHandler.CREATED_FROM_OTHER_WORKSPACE = "CREATED_FROM_OTHER_WORKSPACE";
+Blockly.UndoHandler.CREATED_FROM_SAME_WORKSPACE = "CREATED_FROM_SAME_WORKSPACE";
+
 Blockly.UndoHandler.savedState = {};
 Blockly.UndoHandler.savedStates = [];
 Blockly.UndoHandler.isRecording = false;
 
 Blockly.UndoHandler.retrieveState = function () {
-    if (Blockly.UndoHandler.savedStates.length > 0) {
+    if(Blockly.UndoHandler.savedStates.length > 0) {
         var mostRecentState = Blockly.UndoHandler.savedStates.pop();
         Blockly.UndoHandler.processState(mostRecentState);
     }
@@ -71,7 +74,7 @@ Blockly.UndoHandler.processState = function(state) {
         for(var i = 0; i < connectedConnectionIndices.length; i++) {
             var connection = state.BLOCK.getConnections_()[connectedConnectionIndices[i]];
             if(connection.targetConnection != null) {
-                if (connection.isSuperior()) {
+                if(connection.isSuperior()) {
                     connection.targetConnection.sourceBlock_.unplug();
                 }
                 else {
@@ -191,7 +194,6 @@ Blockly.UndoHandler.createDisconnectedBlockRecord = function(disconnectedBlocks)
 Blockly.UndoHandler.startRecord = function(block) {
     // not going to save states for changes in other workspaces (e.g. mutator workspaces, etc.)
     if(block.workspace == Blockly.mainWorkspace && Blockly.UndoHandler.isRecording == false) {
-        Blockly.UndoHandler.savedState = {}; // reset savedState
         Blockly.UndoHandler.savedState.BLOCK = block;
         Blockly.UndoHandler.isRecording = true;
     }
@@ -203,21 +205,21 @@ Blockly.UndoHandler.startRecord = function(block) {
 Blockly.UndoHandler.addRecord = function(type, data) {
     if(Blockly.UndoHandler.isRecording) {
         // only add record if it was not recorded yet (preventing duplicates)
-        if (!Blockly.UndoHandler.savedState.hasOwnProperty(type)) {
-            if (type == Blockly.UndoHandler.STATE_TYPE_DELETED) {
+        if(!Blockly.UndoHandler.savedState.hasOwnProperty(type)) {
+            if(type == Blockly.UndoHandler.STATE_TYPE_DELETED) {
                 Blockly.UndoHandler.savedState[type] = Blockly.UndoHandler.createDeletedBlockRecord(data);
             }
-            else if (type == Blockly.UndoHandler.STATE_TYPE_MOVED) {
+            else if(type == Blockly.UndoHandler.STATE_TYPE_MOVED) {
                 Blockly.UndoHandler.savedState[type] = Blockly.UndoHandler.createMovedBlockRecord();
             }
-            else if (type == Blockly.UndoHandler.STATE_TYPE_CONNECTED) {
+            else if(type == Blockly.UndoHandler.STATE_TYPE_CONNECTED) {
                 Blockly.UndoHandler.savedState[type] = Blockly.UndoHandler.createConnectedBlockRecord(data);
             }
-            else if (type == Blockly.UndoHandler.STATE_TYPE_DISCONNECTED) {
+            else if(type == Blockly.UndoHandler.STATE_TYPE_DISCONNECTED) {
                 Blockly.UndoHandler.savedState[type] = Blockly.UndoHandler.createDisconnectedBlockRecord(data);
             }
-            else if (type == Blockly.UndoHandler.STATE_TYPE_CREATED) {
-                Blockly.UndoHandler.savedState[type] = true;
+            else if(type == Blockly.UndoHandler.STATE_TYPE_CREATED) {
+                Blockly.UndoHandler.savedState[type] = data;
             }
         }
     }
@@ -230,7 +232,7 @@ Blockly.UndoHandler.endRecord = function () {
             // skip cases where created block was deleted right away
             if(!(Blockly.UndoHandler.savedState[Blockly.UndoHandler.STATE_TYPE_CREATED] && Blockly.UndoHandler.savedState[Blockly.UndoHandler.STATE_TYPE_DELETED])) {
                 // if already saving maximum number of states, delete oldest one which is the element at index 0
-                if (Blockly.UndoHandler.savedStates.length >= Blockly.UndoHandler.MAX_NUM_SAVED_STATES) {
+                if(Blockly.UndoHandler.savedStates.length >= Blockly.UndoHandler.MAX_NUM_SAVED_STATES) {
                     Blockly.UndoHandler.savedStates.shift();
                 }
                 Blockly.UndoHandler.savedStates.push(Blockly.UndoHandler.savedState);
@@ -241,6 +243,7 @@ Blockly.UndoHandler.endRecord = function () {
         else if(Blockly.UndoHandler.savedState.BLOCK) {
             //console.log("Blockly.UndoHandler.endRecord: discarding empty record for blockId: " + Blockly.UndoHandler.savedState.BLOCK.id);
         }
+        Blockly.UndoHandler.savedState = {}; // reset savedState
         Blockly.UndoHandler.isRecording = false;
     }
     else {
@@ -257,7 +260,7 @@ Blockly.UndoHandler.remapDeletedBlockToRevivedBlock = function(deletedBlock, rev
         if(savedState[Blockly.UndoHandler.STATE_TYPE_DISCONNECTED]) {
             var disconnectedBlocksRecords = savedState[Blockly.UndoHandler.STATE_TYPE_DISCONNECTED];
             for(var j = 0; j < disconnectedBlocksRecords.length; j++) {
-                if (disconnectedBlocksRecords[j].disconnectedBlock == deletedBlock) {
+                if(disconnectedBlocksRecords[j].disconnectedBlock == deletedBlock) {
                     disconnectedBlocksRecords[j].disconnectedBlock = revivedBlock;
                 }
             }
@@ -296,6 +299,15 @@ Blockly.UndoHandler.getIndexOfConnectionToTargetBlock = function(sourceBlock, ta
             return i;
         }
     }
+};
+
+Blockly.UndoHandler.recordStartedFromOtherWorkspace = function () {
+    var typeToCheck = Blockly.UndoHandler.STATE_TYPE_CREATED;
+    if(Blockly.UndoHandler.isRecording && Blockly.UndoHandler.savedState.hasOwnProperty(typeToCheck) && Blockly.UndoHandler.savedState[typeToCheck] == Blockly.UndoHandler.CREATED_FROM_OTHER_WORKSPACE) {
+        return true;
+    }
+    
+    return false;
 };
 
 Blockly.UndoHandler.notifyStateChange = function () {
