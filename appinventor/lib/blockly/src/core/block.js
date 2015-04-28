@@ -781,6 +781,10 @@ Blockly.Block.prototype.showContextMenu_ = function(e) {
       enabled: true,
       callback: function() {
         block.duplicate_();
+        // gotta restart since record already started in onMouseDown_, and we are no longer recording for that block
+        Blockly.UndoHandler.restartRecord(Blockly.selected);
+        Blockly.UndoHandler.addRecord(Blockly.UndoHandler.STATE_TYPE_CREATED);
+        Blockly.UndoHandler.endRecord();
       }
     };
     if (this.getDescendants().length > this.workspace.remainingCapacity()) {
@@ -867,6 +871,18 @@ Blockly.Block.prototype.showContextMenu_ = function(e) {
           Blockly.Msg.DELETE_X_BLOCKS.replace('%1', String(descendantCount)),
       enabled: true,
       callback: function() {
+        // Blockly.UndoHandler.startRecord already started in onMouseDown_
+        if(Blockly.selected.getParent() && Blockly.selected.getNextBlock()) {
+          Blockly.UndoHandler.addRecord(Blockly.UndoHandler.STATE_TYPE_DISCONNECTED, [Blockly.selected.getParent(), Blockly.selected.getNextBlock()]);
+        }
+        else if(Blockly.selected.getParent()) {
+          Blockly.UndoHandler.addRecord(Blockly.UndoHandler.STATE_TYPE_DISCONNECTED, [Blockly.selected.getParent()]);
+        }
+        else if(Blockly.selected.getNextBlock()) {
+          Blockly.UndoHandler.addRecord(Blockly.UndoHandler.STATE_TYPE_DISCONNECTED, [Blockly.selected.getNextBlock()]);
+        }
+        Blockly.UndoHandler.addRecord(Blockly.UndoHandler.STATE_TYPE_DELETED, Blockly.UndoHandler.DELETED_BY_KEY);
+        Blockly.UndoHandler.endRecord();
         block.dispose(true, true);
       }
     };

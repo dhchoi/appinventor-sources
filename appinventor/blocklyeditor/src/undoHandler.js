@@ -194,6 +194,19 @@ Blockly.UndoHandler.startRecord = function(block) {
         Blockly.UndoHandler.savedState.BLOCK = block;
         Blockly.UndoHandler.isRecording = true;
     }
+    else {
+        console.log("Blockly.UndoHandler.startRecord: attempting to start new record without ending existing one.");
+    }
+};
+
+Blockly.UndoHandler.restartRecord = function(block) {
+    if(block.workspace == Blockly.mainWorkspace && Blockly.UndoHandler.isRecording == true) {
+        Blockly.UndoHandler.savedState = {}; // reset savedState
+        Blockly.UndoHandler.savedState.BLOCK = block;
+    }
+    else {
+        console.log("Blockly.UndoHandler.restartRecord: attempting to restart new record when none has started in first place.");
+    }
 };
 
 Blockly.UndoHandler.addRecord = function(type, data) {
