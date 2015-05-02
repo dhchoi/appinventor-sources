@@ -10,19 +10,22 @@
  * TODO:
  * [Required]
  *  - change hardcoded strings to MSGs and enums + internationalization
- *  - refactor variable and method names
- *  - implement for disconnections in case of healStack when DELETED_BY_KEY
- *  - fix when connecting into middle (if undo is done, then the bottom should connect back to top)
- *  - recover from automatic block movements when superior block connects to inferior block
  *  - take care of private members
  *  - implement redo
- *  - probably refactor later to change isRecording to Object.keys(Blockly.UndoHandler.currentRecord).length? (performance down?)
+ *  - record state changes that were made automatically by the Blockly framework, such as:
+ *     - automatic connections made when connection healing done during block deletion (by key)
+ *     - automatic connections made to blocks that connect to preexisting connections in the middle
+ *       (if undo is done, then the bottom should connect back to top)
+ *     - automatic movements made when placing blocks on top of other blocks
+ *     - automatic movements made when superior block connects to inferior block
  *  - create test cases
  *
  *  [Potential]
- *  - implement for block collapse/disable/add_comment changes (context menu orders)?
- *  - implement for block mutations?
- *  - there is a bug? where deleted blocks still remain in workspace (that is why id is incremented for revived blocks)
+ *  - record additional state changes, such as:
+ *     - collapsing/expanding blocks
+ *     - disabling/enabling blocks
+ *     - adding/removing comments to block
+ *     - mutating blocks
  *  - not tested for Blockly.Realtime environments (don't know what that is)
  */
 
