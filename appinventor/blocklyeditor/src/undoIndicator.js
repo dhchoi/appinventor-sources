@@ -145,5 +145,5 @@ Blockly.UndoIndicator.prototype.updateUndoIndicator = function(numSavedStates) {
  * Call to undo any actions.
  */
 Blockly.UndoIndicator.prototype.onclickUndoToggle = function() {
-    Blockly.UndoHandler.retrieveState();
+    Blockly.UndoHandler.retrieveRecord();
 };

@@ -661,7 +661,7 @@ Blockly.Block.prototype.onMouseUp_ = function(e) {
     Blockly.terminateDrag_();
     // ignore simple clicks when recording moves
     if (!(this_.startDragX == Blockly.selected.getRelativeToSurfaceXY().x && this_.startDragY == Blockly.selected.getRelativeToSurfaceXY().y)) {
-      Blockly.UndoHandler.addRecord(Blockly.UndoHandler.STATE_TYPE_MOVED);
+      Blockly.UndoHandler.addToRecord(Blockly.UndoHandler.STATE_TYPE_MOVED);
     }
     if (Blockly.selected && Blockly.highlightedConnection_) {
       // check what connected connections the block originally had before making the new connection
@@ -683,12 +683,12 @@ Blockly.Block.prototype.onMouseUp_ = function(e) {
         // Don't throw an object in the trash can if it just got connected.
         this_.workspace.trashcan.close();
       }
-      Blockly.UndoHandler.addRecord(Blockly.UndoHandler.STATE_TYPE_CONNECTED, previousConnectedConnections);
+      Blockly.UndoHandler.addToRecord(Blockly.UndoHandler.STATE_TYPE_CONNECTED, previousConnectedConnections);
     } else if (this_.workspace.trashcan && this_.workspace.trashcan.isOpen) {
       var trashcan = this_.workspace.trashcan;
       goog.Timer.callOnce(trashcan.close, 100, trashcan);
       if (Blockly.selected.confirmDeletion()) {
-        Blockly.UndoHandler.addRecord(Blockly.UndoHandler.STATE_TYPE_DELETED, Blockly.UndoHandler.DELETED_BY_MOUSE);
+        Blockly.UndoHandler.addToRecord(Blockly.UndoHandler.STATE_TYPE_DELETED, Blockly.UndoHandler.DELETED_BY_MOUSE);
         Blockly.selected.dispose(false, true);
       }
       // Dropping a block on the trash can will usually cause the workspace to
@@ -789,7 +789,7 @@ Blockly.Block.prototype.showContextMenu_ = function(e) {
         // gotta restart, since we are no longer recording for the block that we started to record for in onMouseDown_
         Blockly.UndoHandler.endRecord();
         Blockly.UndoHandler.startRecord(Blockly.selected);
-        Blockly.UndoHandler.addRecord(Blockly.UndoHandler.STATE_TYPE_CREATED, Blockly.UndoHandler.CREATED_FROM_SAME_WORKSPACE);
+        Blockly.UndoHandler.addToRecord(Blockly.UndoHandler.STATE_TYPE_CREATED, Blockly.UndoHandler.CREATED_FROM_SAME_WORKSPACE);
         Blockly.UndoHandler.endRecord();
       }
     };
@@ -879,15 +879,15 @@ Blockly.Block.prototype.showContextMenu_ = function(e) {
       callback: function() {
         // Blockly.UndoHandler.startRecord already started in onMouseDown_
         if(Blockly.selected.getParent() && Blockly.selected.getNextBlock()) {
-          Blockly.UndoHandler.addRecord(Blockly.UndoHandler.STATE_TYPE_DISCONNECTED, [Blockly.selected.getParent(), Blockly.selected.getNextBlock()]);
+          Blockly.UndoHandler.addToRecord(Blockly.UndoHandler.STATE_TYPE_DISCONNECTED, [Blockly.selected.getParent(), Blockly.selected.getNextBlock()]);
         }
         else if(Blockly.selected.getParent()) {
-          Blockly.UndoHandler.addRecord(Blockly.UndoHandler.STATE_TYPE_DISCONNECTED, [Blockly.selected.getParent()]);
+          Blockly.UndoHandler.addToRecord(Blockly.UndoHandler.STATE_TYPE_DISCONNECTED, [Blockly.selected.getParent()]);
         }
         else if(Blockly.selected.getNextBlock()) {
-          Blockly.UndoHandler.addRecord(Blockly.UndoHandler.STATE_TYPE_DISCONNECTED, [Blockly.selected.getNextBlock()]);
+          Blockly.UndoHandler.addToRecord(Blockly.UndoHandler.STATE_TYPE_DISCONNECTED, [Blockly.selected.getNextBlock()]);
         }
-        Blockly.UndoHandler.addRecord(Blockly.UndoHandler.STATE_TYPE_DELETED, Blockly.UndoHandler.DELETED_BY_KEY);
+        Blockly.UndoHandler.addToRecord(Blockly.UndoHandler.STATE_TYPE_DELETED, Blockly.UndoHandler.DELETED_BY_KEY);
         Blockly.UndoHandler.endRecord();
         block.dispose(true, true);
       }
@@ -1020,7 +1020,7 @@ Blockly.Block.prototype.onMouseMove_ = function(e) {
         Blockly.Block.dragMode_ = 2;
         // add disconnect record
         if(this_.getParent()) {
-            Blockly.UndoHandler.addRecord(Blockly.UndoHandler.STATE_TYPE_DISCONNECTED, [this_.getParent()]);
+            Blockly.UndoHandler.addToRecord(Blockly.UndoHandler.STATE_TYPE_DISCONNECTED, [this_.getParent()]);
         }
         // Push this block to the very top of the stack.
         this_.setParent(null);
