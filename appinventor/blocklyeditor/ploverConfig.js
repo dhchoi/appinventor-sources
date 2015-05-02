@@ -85,6 +85,8 @@
     "./src/nameSet.js",
     "./src/substitution.js",
     "./src/language_switch.js",
+    "./src/undoIndicator.js",
+    "./src/undoHandler.js",
 
     //blocks files
     './src/blocks/control.js',

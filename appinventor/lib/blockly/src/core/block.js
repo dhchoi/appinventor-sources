@@ -38,6 +38,7 @@ goog.require('Blockly.Msg');
 goog.require('Blockly.Mutator');
 goog.require('Blockly.Warning');
 goog.require('Blockly.WarningHandler');
+goog.require('Blockly.UndoHandler');
 goog.require('Blockly.Workspace');
 goog.require('Blockly.Xml');
 goog.require('goog.Timer');
@@ -593,6 +594,12 @@ Blockly.Block.prototype.onMouseDown_ = function(e) {
   Blockly.terminateDrag_();
   this.select();
   Blockly.hideChaff();
+  if(!Blockly.UndoHandler.recordStartedFromOtherWorkspace()) { // continue to record what was started from flyout.js
+    if(Blockly.UndoHandler.isRecording) {
+      Blockly.UndoHandler.endRecord(); // if a record didn't end before onMouseDown_ happened again, it was probably useless 
+    }
+    Blockly.UndoHandler.startRecord(Blockly.selected);
+  }
   if (Blockly.isRightButton(e)) {
     // Right-click.
     this.showContextMenu_(e);
@@ -652,7 +659,13 @@ Blockly.Block.prototype.onMouseUp_ = function(e) {
   Blockly.resetWorkspaceArrangements();
   Blockly.doCommand(function() {
     Blockly.terminateDrag_();
+    // ignore simple clicks when recording moves
+    if (!(this_.startDragX == Blockly.selected.getRelativeToSurfaceXY().x && this_.startDragY == Blockly.selected.getRelativeToSurfaceXY().y)) {
+      Blockly.UndoHandler.addToRecord(Blockly.UndoHandler.STATE_TYPE_MOVED);
+    }
     if (Blockly.selected && Blockly.highlightedConnection_) {
+      // check what connected connections the block originally had before making the new connection
+      var previousConnectedConnections = Blockly.selected.getConnectedConnectionsList_();
       // Connect two blocks together.
       Blockly.localConnection_.connect(Blockly.highlightedConnection_);
       if (this_.svg_) {
@@ -670,10 +683,12 @@ Blockly.Block.prototype.onMouseUp_ = function(e) {
         // Don't throw an object in the trash can if it just got connected.
         this_.workspace.trashcan.close();
       }
+      Blockly.UndoHandler.addToRecord(Blockly.UndoHandler.STATE_TYPE_CONNECTED, previousConnectedConnections);
     } else if (this_.workspace.trashcan && this_.workspace.trashcan.isOpen) {
       var trashcan = this_.workspace.trashcan;
       goog.Timer.callOnce(trashcan.close, 100, trashcan);
       if (Blockly.selected.confirmDeletion()) {
+        Blockly.UndoHandler.addToRecord(Blockly.UndoHandler.STATE_TYPE_DELETED, Blockly.UndoHandler.DELETED_BY_MOUSE);
         Blockly.selected.dispose(false, true);
       }
       // Dropping a block on the trash can will usually cause the workspace to
@@ -685,6 +700,7 @@ Blockly.Block.prototype.onMouseUp_ = function(e) {
       Blockly.highlightedConnection_.unhighlight();
       Blockly.highlightedConnection_ = null;
     }
+    Blockly.UndoHandler.endRecord();
   });
   if (! Blockly.Instrument.avoidRenderWorkspaceInMouseUp) {
     // [lyn, 04/01/14] rendering a workspace takes a *long* time and is *not* necessary!
@@ -696,6 +712,23 @@ Blockly.Block.prototype.onMouseUp_ = function(e) {
   var timeDiff = stop - start;
   Blockly.Instrument.stats.totalTime = timeDiff;
   Blockly.Instrument.displayStats("onMouseUp");
+};
+
+/**
+ * Get a list of connections only for those that have target connections (i.e. is connected to something).
+ * @private
+ */
+Blockly.Block.prototype.getConnectedConnectionsList_ = function () {
+    var connectedConnections = [];
+    var allConnections = Blockly.selected.getConnections_();
+    
+    for(var i = 0; i < allConnections.length; i++) {
+        if(allConnections[i].targetConnection != null) {
+            connectedConnections.push(allConnections[i]);
+        }
+    }
+    
+    return connectedConnections;
 };
 
 /**
@@ -753,6 +786,11 @@ Blockly.Block.prototype.showContextMenu_ = function(e) {
       enabled: true,
       callback: function() {
         block.duplicate_();
+        // gotta restart, since we are no longer recording for the block that we started to record for in onMouseDown_
+        Blockly.UndoHandler.endRecord();
+        Blockly.UndoHandler.startRecord(Blockly.selected);
+        Blockly.UndoHandler.addToRecord(Blockly.UndoHandler.STATE_TYPE_CREATED, Blockly.UndoHandler.CREATED_FROM_SAME_WORKSPACE);
+        Blockly.UndoHandler.endRecord();
       }
     };
     if (this.getDescendants().length > this.workspace.remainingCapacity()) {
@@ -839,6 +877,18 @@ Blockly.Block.prototype.showContextMenu_ = function(e) {
           Blockly.Msg.DELETE_X_BLOCKS.replace('%1', String(descendantCount)),
       enabled: true,
       callback: function() {
+        // Blockly.UndoHandler.startRecord already started in onMouseDown_
+        if(Blockly.selected.getParent() && Blockly.selected.getNextBlock()) {
+          Blockly.UndoHandler.addToRecord(Blockly.UndoHandler.STATE_TYPE_DISCONNECTED, [Blockly.selected.getParent(), Blockly.selected.getNextBlock()]);
+        }
+        else if(Blockly.selected.getParent()) {
+          Blockly.UndoHandler.addToRecord(Blockly.UndoHandler.STATE_TYPE_DISCONNECTED, [Blockly.selected.getParent()]);
+        }
+        else if(Blockly.selected.getNextBlock()) {
+          Blockly.UndoHandler.addToRecord(Blockly.UndoHandler.STATE_TYPE_DISCONNECTED, [Blockly.selected.getNextBlock()]);
+        }
+        Blockly.UndoHandler.addToRecord(Blockly.UndoHandler.STATE_TYPE_DELETED, Blockly.UndoHandler.DELETED_BY_KEY);
+        Blockly.UndoHandler.endRecord();
         block.dispose(true, true);
       }
     };
@@ -968,6 +1018,10 @@ Blockly.Block.prototype.onMouseMove_ = function(e) {
       if (dr > Blockly.DRAG_RADIUS) {
         // Switch to unrestricted dragging.
         Blockly.Block.dragMode_ = 2;
+        // add disconnect record
+        if(this_.getParent()) {
+            Blockly.UndoHandler.addToRecord(Blockly.UndoHandler.STATE_TYPE_DISCONNECTED, [this_.getParent()]);
+        }
         // Push this block to the very top of the stack.
         this_.setParent(null);
         this_.setDragging_(true);

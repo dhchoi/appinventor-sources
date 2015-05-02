@@ -98,6 +98,12 @@ Blockly.Workspace.prototype.trashcan = null;
 Blockly.Workspace.prototype.warningIndicator = null;
 
 /**
+ * The workspace's undo indicator.
+ * @type {Blockly.UndoIndicator}
+ */
+Blockly.Workspace.prototype.undoIndicator = null;
+
+/**
  * PID of upcoming firing of a change event.  Used to fire only one event
  * after multiple changes.
  * @type {?number}
@@ -149,6 +155,11 @@ Blockly.Workspace.prototype.dispose = function() {
     this.warningIndicator.dispose();
     this.warningIndicator = null;
   }
+
+  if (this.undoIndicator) {
+    this.undoIndicator.dispose();
+    this.undoIndicator = null;
+  }  
 };
 
 /**
@@ -176,6 +187,18 @@ Blockly.Workspace.prototype.addWarningIndicator = function(getMetrics) {
   }
 };
 
+/**
+ * Adds the undo indicator.
+ * @param {!Function} getMetrics A function that returns workspace's metrics.
+ */
+Blockly.Workspace.prototype.addUndoIndicator = function(getMetrics) {
+  if (Blockly.UndoIndicator && !this.readOnly) {
+    this.undoIndicator = new Blockly.UndoIndicator(getMetrics);
+    var svgUndoIndicator = this.undoIndicator.createDom();
+    this.svgGroup_.insertBefore(svgUndoIndicator, this.svgBlockCanvas_);
+    this.undoIndicator.init();  
+  }  
+};
 
 /**
  * Get the SVG element that forms the drawing surface.

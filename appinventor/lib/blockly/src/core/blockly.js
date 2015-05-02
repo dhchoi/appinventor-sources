@@ -53,6 +53,7 @@ goog.require('Blockly.WidgetDiv');
 goog.require('Blockly.Workspace');
 goog.require('Blockly.inject');
 goog.require('Blockly.utils');
+goog.require('Blockly.UndoHandler');
 
 // Closure dependencies.
 goog.require('goog.color');
@@ -427,6 +428,18 @@ Blockly.onKeyDown_ = function(e) {
     try {
       if (Blockly.selected && Blockly.selected.isDeletable()) {
         if (Blockly.selected.confirmDeletion()){
+          Blockly.UndoHandler.startRecord(Blockly.selected);
+          if(Blockly.selected.getParent() && Blockly.selected.getNextBlock()) {
+            Blockly.UndoHandler.addToRecord(Blockly.UndoHandler.STATE_TYPE_DISCONNECTED, [Blockly.selected.getParent(), Blockly.selected.getNextBlock()]);
+          }
+          else if(Blockly.selected.getParent()) {
+            Blockly.UndoHandler.addToRecord(Blockly.UndoHandler.STATE_TYPE_DISCONNECTED, [Blockly.selected.getParent()]);
+          }
+          else if(Blockly.selected.getNextBlock()) {
+            Blockly.UndoHandler.addToRecord(Blockly.UndoHandler.STATE_TYPE_DISCONNECTED, [Blockly.selected.getNextBlock()]);
+          }
+          Blockly.UndoHandler.addToRecord(Blockly.UndoHandler.STATE_TYPE_DELETED, Blockly.UndoHandler.DELETED_BY_KEY);
+          Blockly.UndoHandler.endRecord();
           Blockly.selected.dispose(true, true);
         }
         Blockly.hideChaff()
@@ -448,6 +461,18 @@ Blockly.onKeyDown_ = function(e) {
       } else if (e.keyCode == 88) {
         // 'x' for cut.
         Blockly.copy_(Blockly.selected);
+        Blockly.UndoHandler.startRecord(Blockly.selected);
+        if(Blockly.selected.getParent() && Blockly.selected.getNextBlock()) {
+          Blockly.UndoHandler.addToRecord(Blockly.UndoHandler.STATE_TYPE_DISCONNECTED, [Blockly.selected.getParent(), Blockly.selected.getNextBlock()]);
+        }
+        else if(Blockly.selected.getParent()) {
+          Blockly.UndoHandler.addToRecord(Blockly.UndoHandler.STATE_TYPE_DISCONNECTED, [Blockly.selected.getParent()]);
+        }
+        else if(Blockly.selected.getNextBlock()) {
+          Blockly.UndoHandler.addToRecord(Blockly.UndoHandler.STATE_TYPE_DISCONNECTED, [Blockly.selected.getNextBlock()]);
+        }
+        Blockly.UndoHandler.addToRecord(Blockly.UndoHandler.STATE_TYPE_DELETED, Blockly.UndoHandler.DELETED_BY_KEY);
+        Blockly.UndoHandler.endRecord();
         Blockly.selected.dispose(true, true);
       }
     }
@@ -455,7 +480,14 @@ Blockly.onKeyDown_ = function(e) {
       // 'v' for paste.
       if (Blockly.clipboard_) {
         Blockly.mainWorkspace.paste(Blockly.clipboard_);
+        Blockly.UndoHandler.startRecord(Blockly.selected);
+        Blockly.UndoHandler.addToRecord(Blockly.UndoHandler.STATE_TYPE_CREATED, Blockly.UndoHandler.CREATED_FROM_SAME_WORKSPACE);
+        Blockly.UndoHandler.endRecord();
       }
+    }
+    if (e.keyCode == 90) {
+      // 'z' for undo.
+      Blockly.UndoHandler.retrieveRecord();
     }
   }
 };
